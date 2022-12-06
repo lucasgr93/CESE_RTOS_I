@@ -77,6 +77,10 @@ TaskHandle_t xTaskLedHandle;
 SemaphoreHandle_t BinarySemaphoreHandle;
 SemaphoreHandle_t MutexHandle;
 
+/* Declare a variable of type QueueHandle_t.  This is used to send messages from
+the button task to the Led task. */
+QueueHandle_t QueueHandle;
+
 /* Task Button & Led Flag	*/
 uint32_t ledFlag = NotBlinking;
 
@@ -113,6 +117,13 @@ void appInit( void )
 
     /* Check the mutex semaphore was created successfully */
 	configASSERT( MutexHandle != NULL );
+	
+   /* Before a queue is used it must be explicitly created.
+     * The queue is created to hold a maximum of 5 long values. */
+	QueueHandle = xQueueCreate( 5, sizeof( ledFlag_t ) );
+
+	/* Check the queues was created successfully */
+	configASSERT( QueueHandle != NULL );
 
 	ptr = &LDX_Config[0];
 	/* Task Led thread at priority 1 */
