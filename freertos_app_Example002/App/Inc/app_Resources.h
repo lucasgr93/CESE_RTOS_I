@@ -58,18 +58,24 @@
 // ------ external data declaration ------------------------------------
 /* Declare a variable of type xSemaphoreHandle.  This is used to reference the
  * semaphore that is used to synchronize a task with other task. */
-extern xSemaphoreHandle xCountingSemaphoreEntry;
-extern xSemaphoreHandle xCountingSemaphoreExit;
-extern xSemaphoreHandle xBinarySemaphoreContinue;
+extern xSemaphoreHandle xBinarySemaphoreEntry;
+extern xSemaphoreHandle xBinarySemaphoreExit[2];
+extern xSemaphoreHandle xCountingSemaphoreContinue;
 
 /* Declare a variable of type xSemaphoreHandle.  This is used to reference the
  * mutex type semaphore that is used to ensure mutual exclusive access to...*/
 extern xSemaphoreHandle xMutex;
 
+
+
 /* Used to hold the handle of TaskTest. */
 extern xTaskHandle vTaskAHandle;
 extern xTaskHandle vTaskBHandle;
 extern xTaskHandle vTaskTestHandle;
+extern xTaskHandle vTaskMonitorHandle;
+
+extern QueueHandle_t xQueueVehicle;
+extern QueueHandle_t xQueueVehicleDateTime;
 
 /* Task A & B Counter	*/
 #define lTasksCntMAX	3

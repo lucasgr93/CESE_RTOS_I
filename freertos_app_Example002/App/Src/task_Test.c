@@ -68,7 +68,7 @@
 
 // ------ internal data declaration ------------------------------------
 /* Events to excite tasks */
-typedef enum eTaskTest{ Error, Entry, Exit } eTaskTest_t;
+typedef enum eTaskTest{ Exit_0, Exit_1, Entry , Error} eTaskTest_t;
 
 // ------ internal functions declaration -------------------------------
 
@@ -83,7 +83,8 @@ const char *pcTextForTaskTest_priority			 	= "  <=> Tesk Test - priority:";
 const char *pcTextForTaskTest_eTaskTestArrayIndex	= "  <=> Task Test - eTaskTestArray Index :";
 
 const char *pcTextForTaskTest_SignalEntry 			= "  <=> Task Test - Signal: Entry  <=>\r\n";
-const char *pcTextForTaskTest_SignalExit			= "  ==> Task Test - Signal: Exit   <=>\r\n";
+const char *pcTextForTaskTest_SignalExit_0			= "  ==> Task Test - Signal: Exit_0   <=>\r\n";
+const char *pcTextForTaskTest_SignalExit_1			= "  ==> Task Test - Signal: Exit_1   <=>\r\n";
 const char *pcTextForTaskTest_SignalError			= "  <=> Task Test - Signal: Error  <=>\r\n";
 const char *pcTextForTaskTest_Wait5000mS			= "  <=> Task Test - Wait:   5000mS <=>\r\n\n";
 
@@ -106,7 +107,7 @@ const eTaskTest_t eTaskTestArray[] = { Entry, Entry, Exit, Exit };
 
 #if( TEST_X == 3 )
 /* Array of events to excite tasks */
-const eTaskTest_t eTaskTestArray[] = { Entry, Entry, Entry, Entry, Exit, Exit, Exit, Exit };
+const eTaskTest_t eTaskTestArray[] = { Entry, Entry, Entry, Entry, Exit_0, Exit_1, Exit_0, Exit_1 };
 #endif
 
 #if( TEST_X == 4 )
@@ -169,19 +170,26 @@ void vTaskTest( void *pvParameters )
 
 			switch( eTaskTestArray[i] ) {
 
-	    		case Entry:
-
-				    /* 'Give' the semaphore to unblock the task A. */
-		    		vPrintString( pcTextForTaskTest_SignalEntry );
-					xSemaphoreGive( xCountingSemaphoreEntry );
-	    			break;
-
-	    		case Exit:
+	    		case Exit_0:
 
 				    /* 'Give' the semaphore to unblock the task B. */
-		    		vPrintString( pcTextForTaskTest_SignalExit );
-		    		xSemaphoreGive( xCountingSemaphoreExit );
+		    		vPrintString( pcTextForTaskTest_SignalExit_0 );
+		    		xSemaphoreGive( xBinarySemaphoreExit[0] );
 	    			break;
+
+	    		case Exit_1:
+
+					/* 'Give' the semaphore to unblock the task B. */
+					vPrintString( pcTextForTaskTest_SignalExit_1 );
+					xSemaphoreGive( xBinarySemaphoreExit[1] );
+					break;
+
+	    		case Entry:
+
+					/* 'Give' the semaphore to unblock the task A. */
+					vPrintString( pcTextForTaskTest_SignalEntry );
+					xSemaphoreGive( xBinarySemaphoreEntry );
+					break;
 
 		    	case Error:
 		    	default:

@@ -65,15 +65,16 @@
 #include "task_A.h"
 #include "task_B.h"
 #include "task_Test.h"
+#include "task_Monitor.h"
 
 // ------ Macros and definitions ---------------------------------------
 
 // ------ internal data declaration ------------------------------------
 /* Declare a variable of type xSemaphoreHandle.  This is used to reference the
  * semaphore that is used to synchronize a task with other task. */
-xSemaphoreHandle xCountingSemaphoreEntry;
-xSemaphoreHandle xCountingSemaphoreExit;
-xSemaphoreHandle xBinarySemaphoreContinue;
+xSemaphoreHandle xBinarySemaphoreEntry;
+xSemaphoreHandle xBinarySemaphoreExit[2];
+xSemaphoreHandle xCountingSemaphoreContinue;
 
 /* Declare a variable of type xSemaphoreHandle.  This is used to reference the
  * mutex type semaphore that is used to ensure mutual exclusive access to ........ */
@@ -83,6 +84,10 @@ xSemaphoreHandle xMutex;
 xTaskHandle vTaskAHandle;
 xTaskHandle vTaskBHandle;
 xTaskHandle vTaskTestHandle;
+xTaskHandle vTaskMonitorHandle;
+
+QueueHandle_t xQueueVehicle;
+QueueHandle_t xQueueVehicleDateTime;
 
 /* Task A & B Counter	*/
 uint32_t	lTasksCnt;
@@ -103,19 +108,37 @@ const char *pcTextForMain = "freertos_app_Example002 is running: parking lot\r\n
 /* App Initialization */
 void appInit( void )
 {
+	uint32_t numeroDeSalida;
+
 	/* Print out the name of this Example. */
   	vPrintString( pcTextForMain );
 
+    /* Before a queue is used it must be explicitly created.
+     * The queue is created to hold a maximum of 5 long values. */
+  	xQueueVehicle = xQueueCreate( 5, sizeof( InfoCola ) );
+
+	/* Check the queues was created successfully */
+	configASSERT( xQueueVehicle != NULL );
+
+    /* Before a queue is used it must be explicitly created.
+     * The queue is created to hold a maximum of 5 long values. */
+	xQueueVehicleDateTime = xQueueCreate( 5, sizeof( InfoCola ) );
+
+	/* Check the queues was created successfully */
+	configASSERT( xQueueVehicle != NULL );
+
     /* Before a semaphore is used it must be explicitly created.
      * In this example a binary semaphore is created. */
-    xCountingSemaphoreEntry = xSemaphoreCreateCounting(10, 0);
-    xCountingSemaphoreExit = xSemaphoreCreateCounting(10, 0);
-    vSemaphoreCreateBinary( xBinarySemaphoreContinue );
+    vSemaphoreCreateBinary( xBinarySemaphoreEntry    );
+    vSemaphoreCreateBinary( xBinarySemaphoreExit[0]  );
+    vSemaphoreCreateBinary( xBinarySemaphoreExit[1]  );
+    xCountingSemaphoreContinue = xSemaphoreCreateCounting(10, 0);
 
     /* Check the semaphore was created successfully. */
-	configASSERT( xCountingSemaphoreEntry    !=  NULL );
-	configASSERT( xCountingSemaphoreExit     !=  NULL );
-	configASSERT( xBinarySemaphoreContinue !=  NULL );
+	configASSERT( xBinarySemaphoreEntry    !=  NULL );
+	configASSERT( xBinarySemaphoreExit[0]     !=  NULL );
+	configASSERT( xBinarySemaphoreExit[1]     !=  NULL );
+	configASSERT( xCountingSemaphoreContinue !=  NULL );
 
     /* Before a semaphore is used it must be explicitly created.
      * In this example a mutex semaphore is created. */
@@ -137,11 +160,24 @@ void appInit( void )
     /* Check the task was created successfully. */
     configASSERT( ret == pdPASS );
 
+    numeroDeSalida = 0;
     /* Task B thread at priority 2 */
     ret = xTaskCreate( vTaskB,						/* Pointer to the function thats implement the task. */
 					   "Task B",					/* Text name for the task. This is to facilitate debugging only. */
 					   (2 * configMINIMAL_STACK_SIZE),	/* Stack depth in words. 				*/
-					   NULL,						/* We are not using the task parameter.		*/
+					   (void*)numeroDeSalida,    	/* Pass the index as the task parameter. */
+					   (tskIDLE_PRIORITY + 2UL),	/* This task will run at priority 1. 		*/
+					   &vTaskBHandle );				/* We are using a variable as task handle.	*/
+
+    /* Check the task was created successfully. */
+    configASSERT( ret == pdPASS );
+
+    numeroDeSalida = 1;
+    /* Task B thread at priority 2 */
+    ret = xTaskCreate( vTaskB,						/* Pointer to the function thats implement the task. */
+					   "Task B",					/* Text name for the task. This is to facilitate debugging only. */
+					   (2 * configMINIMAL_STACK_SIZE),	/* Stack depth in words. 				*/
+					   (void*)numeroDeSalida,    	/* Pass the index as the task parameter. */
 					   (tskIDLE_PRIORITY + 2UL),	/* This task will run at priority 1. 		*/
 					   &vTaskBHandle );				/* We are using a variable as task handle.	*/
 
@@ -155,6 +191,17 @@ void appInit( void )
 					   NULL,						/* We are not using the task parameter.		*/
 					   (tskIDLE_PRIORITY + 1UL),	/* This task will run at priority 2. 		*/
 					   &vTaskTestHandle );			/* We are using a variable as task handle.	*/
+
+    /* Check the task was created successfully. */
+    configASSERT( ret == pdPASS );
+
+	/* Task Test at priority 1, periodically excites the other tasks */
+    ret = xTaskCreate( vTaskMonitor,					/* Pointer to the function thats implement the task. */
+					   "Task Monitor",					/* Text name for the task. This is to facilitate debugging only. */
+					   (2 * configMINIMAL_STACK_SIZE),	/* Stack depth in words. 				*/
+					   NULL,						/* We are not using the task parameter.		*/
+					   (tskIDLE_PRIORITY + 1UL),	/* This task will run at priority 2. 		*/
+					   &vTaskMonitorHandle );			/* We are using a variable as task handle.	*/
 
     /* Check the task was created successfully. */
     configASSERT( ret == pdPASS );

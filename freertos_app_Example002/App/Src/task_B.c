@@ -63,6 +63,7 @@
 /* Application includes. */
 #include "app_Resources.h"
 #include "task_B.h"
+#include "task_Monitor.h"
 
 // ------ Macros and definitions ---------------------------------------
 
@@ -76,15 +77,15 @@ uint32_t lTaskBFlag;
 /* Define the strings that will be passed in as the Supporting Functions parameters.
  * These are defined const and off the stack to ensure they remain valid when the
  * tasks are executing. */
-const char *pcTextForTaskB    				= "  ==> Task    B - Running\r\n";
+const char *pcTextForTaskB[2]    			 = {"  ==> Task    B_0 - Running\r\n", "  ==> Task    B_1 - Running\r\n"};
 
-const char *pcTextForTaskB_lTasksCnt		= "  <=> Task    B - lTasksCnt :";
+const char *pcTextForTaskB_lTasksCnt[2]		 = {"  <=> Task    B_0 - lTasksCnt :", "  <=> Task    B_1 - lTasksCnt :"};
 
-const char *pcTextForTaskB_WaitExit    		= "  ==> Task    B - Wait:   Exit        \r\n\n";
-const char *pcTextForTaskB_SignalContinue   = "  ==> Task    B - Signal: Continue ==>\r\n\n";
+const char *pcTextForTaskB_WaitExit[2]    	 = {"  ==> Task    B_0 - Wait:   Exit        \r\n\n", "  ==> Task    B_1 - Wait:   Exit        \r\n\n"};
+const char *pcTextForTaskB_SignalContinue[2] = {"  ==> Task    B_0 - Signal: Continue ==>\r\n\n", "  ==> Task    B_1 - Signal: Continue ==>\r\n\n"};
 
-const char *pcTextForTaskB_WaitMutex        = "  ==> Task    B - Wait:   Mutex       \r\n\n";
-const char *pcTextForTaskB_SignalMutex      = "  ==> Task    B - Signal: Mutex    ==>\r\n\n";
+const char *pcTextForTaskB_WaitMutex[2]      = {"  ==> Task    B_0 - Wait:   Mutex       \r\n\n", "  ==> Task    B_1 - Wait:   Mutex       \r\n\n"};
+const char *pcTextForTaskB_SignalMutex[2]    = {"  ==> Task    B_0 - Signal: Mutex    ==>\r\n\n", "  ==> Task    B_1 - Signal: Mutex    ==>\r\n\n"};
 
 // ------ external data definition -------------------------------------
 
@@ -96,15 +97,20 @@ const char *pcTextForTaskB_SignalMutex      = "  ==> Task    B - Signal: Mutex  
 /* Task B thread */
 void vTaskB( void *pvParameters )
 {
+	/*  Declare & Initialize Task Function variables for argument, led, button and task */
+	InfoCola info;
+
+	info.numeroDeSalida = (uint32_t) pvParameters;
+
 	/* Print out the name of this task. */
-	vPrintString( pcTextForTaskB );
+	vPrintString( pcTextForTaskB[info.numeroDeSalida] );
 
 	/* As per most tasks, this task is implemented within an infinite loop.
 	 *
 	 * Take the semaphore once to start with so the semaphore is empty before the
 	 * infinite loop is entered.  The semaphore was created before the scheduler
 	 * was started so before this task ran for the first time.*/
-    xSemaphoreTake( xCountingSemaphoreExit, (portTickType) 0 );
+    xSemaphoreTake( xBinarySemaphoreExit[info.numeroDeSalida], (portTickType) 0 );
 
     /* Reset Task B Flag	*/
     lTaskBFlag = 0;
@@ -118,8 +124,8 @@ void vTaskB( void *pvParameters )
          * indefinitely meaning this function call will only return once the
          * semaphore has been successfully obtained - so there is no need to check
          * the returned value. */
-		vPrintString( pcTextForTaskB_WaitExit );
-        xSemaphoreTake( xCountingSemaphoreExit, portMAX_DELAY );
+		vPrintString( pcTextForTaskB_WaitExit[info.numeroDeSalida] );
+        xSemaphoreTake( xBinarySemaphoreExit[info.numeroDeSalida], portMAX_DELAY );
         {
         	/* The semaphore is created before the scheduler is started so already
     		 * exists by the time this task executes.
@@ -129,7 +135,7 @@ void vTaskB( void *pvParameters )
     		 * the semaphore has been successfully obtained so there is no need to check
     		 * the return value.  If any other delay period was used then the code must
     		 * check that xSemaphoreTake() returns pdTRUE before accessing the resource. */
-        	vPrintString( pcTextForTaskB_WaitMutex );
+        	vPrintString( pcTextForTaskB_WaitMutex[info.numeroDeSalida] );
         	xSemaphoreTake( xMutex, portMAX_DELAY );
         	{
         		/* The following line will only execute once the semaphore has been
@@ -137,7 +143,11 @@ void vTaskB( void *pvParameters )
 
         		/* Update Task A & B Counter */
         		lTasksCnt--;
-    			vPrintStringAndNumber( pcTextForTaskB_lTasksCnt, lTasksCnt);
+
+        		info.patente = (char*)"AA123BB";
+        		info.numeroDeTareaDeSalida = vTaskBHandle;
+
+    			vPrintStringAndNumber( pcTextForTaskB_lTasksCnt[info.numeroDeSalida], lTasksCnt);
 
    			    /* Check Task A & B Counter	*/
     			if( lTasksCnt == (lTasksCntMAX - 1) )
@@ -146,7 +156,7 @@ void vTaskB( void *pvParameters )
     				lTaskBFlag = 1;
     			}
     			/* 'Give' the semaphore to unblock the tasks. */
-        		vPrintString( pcTextForTaskB_SignalMutex );
+        		vPrintString( pcTextForTaskB_SignalMutex[info.numeroDeSalida] );
         		xSemaphoreGive( xMutex );
 
    			    /* Check Task B Flag	*/
@@ -156,9 +166,11 @@ void vTaskB( void *pvParameters )
        			    lTaskBFlag = 0;
 
         			/* 'Give' the semaphore to unblock the task A. */
-       	        	vPrintString( pcTextForTaskB_SignalContinue );
-       	        	xSemaphoreGive( xBinarySemaphoreContinue );
+       	        	vPrintString( pcTextForTaskB_SignalContinue[info.numeroDeSalida] );
+       	        	xSemaphoreGive( xCountingSemaphoreContinue );
        			}
+
+       			xQueueSendToBack( xQueueVehicle, &info, portMAX_DELAY );
         	}
         }
 	}

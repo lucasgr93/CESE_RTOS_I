@@ -1,4 +1,0 @@
-../Core/Src/taskStats.c:86:6:configureTimerForRunTimeStats	8	static
-../Core/Src/taskStats.c:92:15:getRunTimeCounterValue	4	static
-../Core/Src/taskStats.c:97:6:vApplicationStackOverflowHook	24	static,ignoring_inline_asm
-../Core/Src/taskStats.c:112:6:vTaskStats	32	static

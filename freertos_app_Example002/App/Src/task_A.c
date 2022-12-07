@@ -104,8 +104,8 @@ void vTaskA( void *pvParameters )
 	 * Take the semaphore once to start with so the semaphore is empty before the
 	 * infinite loop is entered.  The semaphore was created before the scheduler
 	 * was started so before this task ran for the first time.*/
-    xSemaphoreTake( xCountingSemaphoreEntry, (portTickType) 0 );
-    xSemaphoreTake( xBinarySemaphoreContinue, (portTickType) 0 );
+    xSemaphoreTake( xBinarySemaphoreEntry, (portTickType) 0 );
+    xSemaphoreTake( xCountingSemaphoreContinue, (portTickType) 0 );
 
     /* Init Task A & B Counter and Reset Task A Flag	*/
     lTasksCnt = 0;
@@ -121,7 +121,7 @@ void vTaskA( void *pvParameters )
          * semaphore has been successfully obtained - so there is no need to check
          * the returned value. */
     	vPrintString( pcTextForTaskA_WaitEntry );
-    	xSemaphoreTake( xCountingSemaphoreEntry, portMAX_DELAY );
+    	xSemaphoreTake( xBinarySemaphoreEntry, portMAX_DELAY );
         {
     		/* The semaphore is created before the scheduler is started so already
     		 * exists by the time this task executes.
@@ -162,7 +162,7 @@ void vTaskA( void *pvParameters )
        		         * semaphore has been successfully obtained - so there is no need to check
        		         * the returned value. */
        			    vPrintString( pcTextForTaskA_WaitContinue );
-       	        	xSemaphoreTake( xBinarySemaphoreContinue, portMAX_DELAY );
+       	        	xSemaphoreTake( xCountingSemaphoreContinue, portMAX_DELAY );
        	        	{
        	        		/* The following line will only execute once the semaphore has been
        	        		 * successfully obtained. */
